@@ -1,5 +1,11 @@
 {
-	"name": "Git", 
+	"name": "Git",
 	"token": "",
 	"client_id": "",
-	"prefix": "$"}
+	"prefix": "$",
+	"github": {
+		"client_id": "",
+		"client_secret": "",
+		"access_token": ""
+	}
+}
