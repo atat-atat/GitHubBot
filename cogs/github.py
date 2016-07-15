@@ -68,11 +68,35 @@ class GitHubCog:
 		await self.bot.say("You will now receive notifications when a new commit has been pushed from this repository, or if an issue was filed.")
 
 	@github.command(name='del_repo', pass_context=True, no_pm=True)
-	async def github_remove_repo(self, ctx, repo_owner : str, repo_name : str):
+	async def github_remove_repo(self, ctx, repo_owner : str, repo_name : str=None):
 		"""
 		Disables notifications from a repository.
 		"""
-		pass
+		with open('./cogs/github_info.json', 'r') as f:
+			config = json.load(f)
+
+		if ctx.message.server.id not in config['repositories']:
+			await self.bot.say("No repositories have been added on this server.")
+			return
+		elif ctx.message.channel.id not in config['repositories'][ctx.message.server.id]:
+			await self.bot.say("No repositories have been added in this channel.")
+			return
+		elif repo_owner not in config['repositories'][ctx.message.server.id][ctx.message.channel.id]:
+			await self.bot.say("No repositories have been added from that owner in this channel.")
+			return
+		elif repo_name not in config['repositories'][ctx.message.server.id][ctx.message.channel.id][repo_owner] and repo_name != None:
+			await self.bot.say("That repository has not been added.")
+			return
+
+		if repo_name == None:
+			config['repositories'][ctx.message.server.id][ctx.message.channel.id].pop(repo_owner)
+		else:
+			config['repositories'][ctx.message.server.id][ctx.message.channel.id][repo_owner].remove(repo_name)
+
+		with open('./cogs/github_info.json', 'w') as f:
+			json.dump(config, f)
+
+		await self.bot.say("You will no longer receive notifications about this repository.")
 
 	@commands.group(aliases=["clear", "clean"], pass_context=True)
 	async def purge(self, ctx):
