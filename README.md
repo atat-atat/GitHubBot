@@ -1,5 +1,5 @@
 # GitHubBot
-A somewhat multifunctional bot that cleans chats, outputs latex images, and notifies users when a new commit or issue has been filed from a GitHub repository.
+A somewhat multifunctional Discord bot that cleans chats, outputs latex images, and notifies users when a new commit or issue has been filed from a GitHub repository.
 
 To get notifications about new issues and commits from a repo, type `{p}github add_repo {repo_owner} {repo_name}` in the text channel you want to receive notifications from (this will not work in a private message.)
 
