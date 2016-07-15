@@ -5,6 +5,7 @@ import aiohttp
 import json
 import sys
 import traceback
+import feedparser
 
 with open('config.json', 'r') as f:
 	settings = json.load(f)
@@ -154,66 +155,29 @@ class GitHubCog:
 						for repo_owner in git_json["repositories"][server][channel]:
 							for repo in git_json["repositories"][server][channel][repo_owner]:
 
-								url = "https://api.github.com/repos/{}/{}/commits?per_page=1?client_id={}?client_secret={}?access_token={}".format(repo_owner, repo, settings['github']['client_id'], settings['github']['client_secret'], settings['github']['access_token'])
-								print(url)
-
-								async with aiohttp.get(url) as r:
-									response = await r.json()
-
-								if 'message' in response:
-									await self.bot.send_message(discord.Object(channel), "I GOT RATE LIMITED AGAIN!")
+								d = feedparser.parse('https://github.com/{}/{}/commits/master.atom'.format(repo_owner, repo))
+								if 'bozo_exception' in d: #if rss url is invalid
+									await self.bot.send_message(discord.Object(channel), "Error while retrieving data from URL: '{}'".format(rss_url))
 								else:
-
-									latest_commit = response[0]["commit"]["message"]
-									commit_url = response[0]["html_url"]
-									if len(latest_commit) > 30:
-										latest_commit = latest_commit[:50] + "..."
-									date = response[0]["commit"]["author"]["date"]
-									committer = response[0]["commit"]["author"]["name"]
-									fmt = "{} --\n{}\n**Pushed by {} ({})**".format(commit_url, latest_commit, committer, date)
-
+									latest_commit = d["entries"][0]["link"]
+									fmt = "{} @here".format(latest_commit)
 									if channel not in self.repo_data:
 										self.repo_data[channel] = {}
-										self.repo_data[channel][repo] = response[0]["sha"]
+										self.repo_data[channel][repo] = latest_commit
 										await self.bot.send_message(discord.Object(channel), fmt)
+
 									elif repo not in self.repo_data[channel]:
-										self.repo_data[channel][repo] = response[0]["sha"]
-										await self.bot.send_message(discord.Object(channel), fmt)
-									elif self.repo_data[channel][repo] != response[0]["sha"]:
-										self.repo_data[channel][repo] = response[0]["sha"]
+										self.repo_data[channel][repo] = latest_commit
 										await self.bot.send_message(discord.Object(channel), fmt)
 
-									issues_url = "https://api.github.com/repos/{}/{}/issues?per_page=1?client_id={}?client_secret={}?access_token={}".format(repo_owner, repo, settings['github']['client_id'], settings['github']['client_secret'], settings['github']['access_token'])
-									print(issues_url)
-
-									async with aiohttp.get(issues_url) as r:
-										response = await r.json()
-
-									if len(response) > 0:
-										issue_id = response[0]["id"]
-										issue_num = response[0]["number"]
-										issue_title = response[0]["title"]
-										issue_submitter = response[0]["user"]["login"]
-										issue_url = response[0]["html_url"]
-										issue_date = response[0]["created_at"]
-
-										fmt = "{} -- *Issue {}*\n{}\n**Issued by {} ({})**".format(issue_url, issue_num, issue_title, issue_submitter, issue_date)
-
-										if channel not in self.repo_issues:
-											self.repo_issues[channel] = {}
-											self.repo_issues[channel][repo] = issue_id
-											await self.bot.send_message(discord.Object(channel), fmt)
-										elif repo not in self.repo_issues[channel]:
-											self.repo_issues[channel][repo] = issue_id
-											await self.bot.send_message(discord.Object(channel), fmt)
-										elif self.repo_issues[channel][repo] != issue_id:
-											self.repo_issues[channel][repo] = issue_id
-											await self.bot.send_message(discord.Object(channel), fmt)
+									elif self.repo_data[channel][repo] != latest_commit:
+										self.repo_data[channel][repo] = latest_commit
+										await self.bot.send_message(discord.Object(channel), fmt)
 
 			except Exception as e:
 				print("LOOP_ERROR@git_loop! " + self.return_traceback(*sys.exc_info()))
 			
-			await asyncio.sleep(500)
+			await asyncio.sleep(20)
 
 	def return_traceback(self, etype, value, tb, limit=None, file=None, chain=True):
 		if file is None:
