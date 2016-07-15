@@ -44,6 +44,18 @@ async def on_message(msg):
 
 	await bot.process_commands(msg)
 
+@bot.event
+async def on_command_error(error, ctx):
+	if isinstance(error, commands.MissingRequiredArgument):
+		await self.bot.send_message(ctx.message.channel, "Missing argument.")
+		return
+	elif isinstance(error, commands.NoPrivateMessage):
+		await self.bot.send_message(ctx.message.channel, "You can not use this command in a private message.")
+		return
+	elif isinstance(error, commands.errors.CheckFailure):
+		await self.bot.send_message(ctx.message.channel, "You do not have permission to use that command.")
+		return
+
 @bot.command(name="reload", pass_context=True)
 async def reload_cogs(ctx):
 	"""
