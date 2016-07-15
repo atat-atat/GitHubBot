@@ -1,6 +1,9 @@
 import discord
 from discord.ext import commands
-import urllib
+from urllib.parse import quote
+import urllib.request
+import aiohttp
+import os
 
 class UtilityCog:
     def __init__(self, bot):
@@ -10,16 +13,18 @@ class UtilityCog:
     async def latex(self, *text):
         """Converts unformated LaTeX into an image
         http://estudijas.lu.lv/pluginfile.php/14809/mod_page/content/16/instrukcijas/matematika_moodle/LaTeX_Symbols.pdf"""
-        url = "http://latex.codecogs.com/png.latex?\\huge "
+        url = "http://latex.codecogs.com/png.latex?\\bg_white \\huge "
         latex = ""
 
-        for token in text:
-            url += token.replace("\\", "\\\\")
-            
-        url = url.replace(' ', '%20')
+        for token in list(text):
+            url += " " + quote(token)
 
-        latex_image = urllib.request.urlopen(url)
-        await bot.send_file(ctx.message.channel, latex_image, filename='latex.png')
+        url = url.replace(' ', "%20")
+
+        urllib.request.urlretrieve(url, "./cogs/latex_image.png")
+
+        await self.bot.upload('./cogs/latex_image.png')
+        os.remove('./cogs/latex_image.png')
 
 def setup(bot):
     bot.add_cog(UtilityCog(bot))

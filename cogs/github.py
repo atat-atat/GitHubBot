@@ -74,6 +74,44 @@ class GitHubCog:
 		"""
 		pass
 
+	@commands.group(aliases=["clear", "clean"], pass_context=True)
+	async def purge(self, ctx):
+		"""
+		Cleans a chat.
+		"""
+		if ctx.invoked_subcommand is None:
+			if ctx.subcommand_passed is None:
+				await self.bot.say("You must provide the amount of messages you wish to clear.")
+				return
+
+			try:
+				amount = int(ctx.subcommand_passed)
+			except ValueError:
+				await self.bot.say("Invalid amount.")
+				return
+
+			await self.bot.purge_from(ctx.message.channel, limit=amount+1)
+
+	@purge.command(name="contains", pass_context=True)
+	async def purge_contains(self, ctx, keyword : str, amount : int=50):
+		"""
+		Cleans the chat if a keyword is in a message.
+		"""
+		await self.bot.purge_from(ctx.message.channel, limit=amount+1)
+
+	@purge.command(name="member", pass_context=True)
+	async def purge_member(self, ctx, member : discord.Member, amount : int=50):
+		"""
+		Cleans messages sent by a member.
+		"""
+		def is_mem(m):
+			if m == ctx.message or m.author == member:
+				return True
+			else:
+				return False
+
+		await self.bot.purge_from(ctx.message.channel, limit=amount+1, check=is_mem)
+
 	async def git_loop(self):
 		"""
 		The main GitHub loop.
@@ -81,6 +119,8 @@ class GitHubCog:
 		This checks whether a new commit has been pushed or not from a repository.
 		"""
 		while not self.bot.is_closed:
+			if 'no-git-loop' in sys.argv:
+				return
 			try:
 				with open('./cogs/github_info.json', 'r') as f:
 					git_json = json.load(f)
@@ -97,7 +137,7 @@ class GitHubCog:
 									response = await r.json()
 
 								if 'message' in response:
-									await self.bot.send_message(discord.Object(channel), "MESSAGE RESP: " + response["message"])
+									await self.bot.send_message(discord.Object(channel), "I GOT RATE LIMITED AGAIN!")
 								else:
 
 									latest_commit = response[0]["commit"]["message"]
@@ -149,7 +189,7 @@ class GitHubCog:
 			except Exception as e:
 				print("LOOP_ERROR@git_loop! " + self.return_traceback(*sys.exc_info()))
 			
-			await asyncio.sleep(4000)
+			await asyncio.sleep(500)
 
 	def return_traceback(self, etype, value, tb, limit=None, file=None, chain=True):
 		if file is None:

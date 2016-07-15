@@ -12,7 +12,7 @@ else:
 	description = settings["description"]
 
 bot = commands.Bot(command_prefix=settings['prefix'], description=description)
-start_extensions = ['github']
+start_extensions = ['github', 'utility']
 loop = asyncio.get_event_loop()
 
 @bot.event
