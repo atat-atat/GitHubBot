@@ -14,14 +14,17 @@ class UtilityCog:
         """Converts unformated LaTeX into an image
         http://estudijas.lu.lv/pluginfile.php/14809/mod_page/content/16/instrukcijas/matematika_moodle/LaTeX_Symbols.pdf"""
         url = "http://latex.codecogs.com/png.latex?\\bg_white \\huge "
-        latex = ""
 
         for token in list(text):
             url += " " + quote(token)
 
         url = url.replace(' ', "%20")
 
-        urllib.request.urlretrieve(url, "./cogs/latex_image.png")
+        async with aiohttp.get(url) as r:
+            response = await r.read()
+
+        with open('./cogs/latex_image.png', 'wb') as fp:
+            fp.write(response)
 
         await self.bot.upload('./cogs/latex_image.png')
         os.remove('./cogs/latex_image.png')
